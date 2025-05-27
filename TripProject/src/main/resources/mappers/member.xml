@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+ <mapper namespace="com.ssafy.trip.model.dao.MemberDao"> 
+    <!--  insert 메서드를 처리하세요. -->
+    
+    
+<!--    <insert id="insert" > 
+    insert into members (name, email, password, address,x,y,lat,lon) values(#{name},#{email},#{password},#{address},#{x},#{y},#{lat},#{lon})
+    </insert>-->
+    
+        <insert id="insert" > 
+    insert into members (name, email, password, address, role, status) values(#{name},#{email},#{password},#{address}, 'USER', 'active')
+    </insert>
+    
+    <select id="loginMember" resultType="Member">
+    	select * from members where email = #{email} and password =#{password} 
+    </select>
+    
+    <select id="getMemberList" resultMap="memberList">
+    	select name, email, password from members
+    </select>
+    
+    
+    <resultMap id="memberList" type="Member">
+    	<result column="name" property="mname"/>
+    	<result column="email" property="email"/>
+    	<result column="password" property="password"/>
+    </resultMap> 
+    
+	<select id="getMemberInfo" resultMap="memberResultMap">
+   		 SELECT * FROM members WHERE email = #{email}
+	</select>
+    
+    <update id="modifyMember">
+    	update members set name=#{name}, password=#{password} where email=#{email}
+    </update>
+    
+    <delete id="deleteMember">
+    	update members set status ='inactive' where email = #{email}
+    </delete>
+    
+    <update id="findPassword">
+    	update members set password=#{password} where email=#{email}
+    </update>
+    
+     <select id="getMemberById" parameterType="int" resultType="com.ssafy.trip.model.dto.Member">
+        SELECT * FROM members WHERE id = #{mid}
+    </select>
+
+<resultMap id="memberResultMap" type="com.ssafy.trip.model.dto.Member">
+    <id property="mno" column="id"/>
+    <result property="name" column="name"/>
+    <result property="email" column="email"/>
+    <result property="password" column="password"/>
+    <result property="address" column="address"/>
+    <result property="role" column="role"/>
+    <result property="status" column="status"/>
+</resultMap>
+
+
+
+</mapper>
+
+

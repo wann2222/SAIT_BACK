@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+  <mapper namespace="com.ssafy.trip.model.dao.QnaCommentDao">
+    <select id="searchAll">
+  	SELECT *
+  	FROM QNA_COMMENTS
+  </select>
+  
+  <insert id="regist">
+  	INSERT 
+  	INTO QNA_COMMENTS(qna_id, mid, content)
+  	VALUES(#{qna_id}, #{mid}, #{content})
+  </insert>
+  
+  <select id="searchByQnaId">
+  	SELECT * 
+  	FROM QNA_COMMENTS
+  	WHERE qna_id = #{qna_id}
+  </select>
+  
+  <delete id="delete">
+  	DELETE 
+  	FROM QNA_COMMENTS
+  	WHERE cid = #{cid}
+  </delete>
+  </mapper>

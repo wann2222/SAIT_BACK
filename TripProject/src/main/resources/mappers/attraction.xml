@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+ <mapper namespace="com.ssafy.trip.model.dao.AttractionDao"> 
+
+    <select id="getBysido" resultMap="attractionList">
+    SELECT a.*
+    FROM attractions a
+    JOIN sidos s ON a.area_code = s.sido_code
+    WHERE s.sido_name = #{sido}
+    ORDER BY a.likes DESC 	
+    LIMIT 20
+</select>
+    
+    <select id="searchAttraction" resultMap="attractionList">
+    	SELECT a.* FROM attractions a  
+		JOIN sidos s ON a.area_code = s.sido_code 
+		JOIN guguns g ON a.si_gun_gu_code = g.gugun_code and a.area_code = g.sido_code 
+		JOIN contenttypes c on c.content_type_id = a.content_type_id 
+		WHERE s.sido_name = #{sido}
+		AND g.gugun_name = #{sigungu}
+		AND content_type_name = #{contentType}
+		LIMIT 20 
+    </select>
+    
+    <select id = "findBySido" resultMap="attractionList">
+    	SELECT a.*
+    	FROM attractions a
+    	JOIN sidos s ON a.area_code = s.sido_code
+    	WHERE s.sido_name LIKE CONCAT(#{sido_name}, '%')
+    </select>
+    
+    <select id = "findBySidoContent" resultMap="attractionList">
+    	SELECT a.*
+    	FROM attractions a
+    	JOIN sidos s ON a.area_code = s.sido_code
+    	JOIN contenttypes c ON a.content_type_id = c.content_type_id
+    	WHERE content_type_name= #{content_type_name} AND
+    	 	  s.sido_name LIKE CONCAT(#{sido_name}, '%')
+    </select>
+    
+    <select id = "findByGugun" resultMap="attractionList">
+	SELECT a.*
+	FROM attractions a
+	WHERE a.area_code = (
+       	SELECT sido_code
+        FROM guguns
+        WHERE no = #{no}
+    )
+  	AND a.si_gun_gu_code = (
+        SELECT gugun_code
+        FROM guguns
+        WHERE no = #{no}
+    	)
+	ORDER BY a.likes DESC
+	LIMIT 8;
+    </select>
+    
+    <select id = "findByGugunContent" resultMap="attractionList">
+    	SELECT a.*
+    	FROM attractions a
+    	JOIN contenttypes c ON a.content_type_id = c.content_type_id
+    	WHERE a.area_code = (SELECT sido_code
+    						FROM guguns
+    						WHERE no = #{no}) AND
+    		  a.si_gun_gu_code = (SELECT gugun_code
+    		  					    FROM guguns
+    		  					   WHERE no = #{no}) AND
+    		  content_type_name = #{content_type_name}
+    </select>
+    
+    <select id="selectAttractionByAno" parameterType="int" resultMap="attractionList">
+   		 SELECT *
+   	   	 FROM attractions
+   		 WHERE no = #{ano}
+	</select>
+    
+    
+    <resultMap id="attractionList" type="Attraction">
+    	<result property="ano" column="no"/>
+    	<result property="name" column="title"/>
+    	<result property="lat" column="latitude"/>
+    	<result property="lon" column="longitude"/>
+    	<result property="address" column="addr1"/>
+    	<result property="overview" column="overview"/>
+    	<result property="img" column="first_image1"/>
+    	<result property="likes" column="likes"/>
+    </resultMap> 
+    
+    <select id="planDetail">
+    SELECT 
+        a.no AS ano,
+        a.title AS name,
+        a.latitude AS lat,
+        a.longitude AS lon,
+        a.addr1 AS address,
+        a.overview AS overview,
+        a.first_image1 AS img
+    FROM plandetail p
+    JOIN attractions a ON p.ano = a.no
+    WHERE p.pid = #{pid}
+	</select>
+    
+    
+    <select id="getSidoList" resultType="string">
+    SELECT sido_name FROM sidos
+   </select>
+    
+    <select id="getSigunguList" resultType="string">
+     SELECT gugun_name FROM guguns WHERE sido_code = (select sido_code from sidos where sido_name=#{sido})
+   </select>
+   
+	<insert id="insertPlan" useGeneratedKeys="true" keyProperty="pid">
+    	INSERT INTO plan (id, name, start, end)
+    	VALUES (#{mno}, #{name}, #{start}, #{end})
+	</insert>
+	
+	<insert id="insertPlanDetail">
+    INSERT INTO plandetail (pid, ano, start, end)
+    VALUES
+    <foreach collection="plan.details" item="detail" separator=",">
+        (#{pid}, #{detail.ano}, #{detail.start}, #{detail.end})
+    </foreach>
+</insert>
+
+   <select id="getPlan" resultMap="planResultMap">
+           SELECT
+               p.pid AS pid,
+               p.id AS id,
+               p.name AS name,
+               p.start AS p_start,
+               p.end AS p_end,
+               d.ano AS ano,
+               d.start AS d_start,
+               d.end AS d_end
+           FROM plan p
+           JOIN plandetail d ON p.pid= d.pid
+           WHERE p.pid = #{pid}           
+   </select>
+   
+
+
+   
+   
+   
+     <select id = "getByTitle" resultMap="attractionList">
+		SELECT a.*
+		FROM attractions a
+		WHERE title LIKE CONCAT('%', #{title}, '%')
+    </select>
+    
+
+    <update id="updatePlan" parameterType="Plan">
+        UPDATE plan
+        SET
+            name = #{name},
+            start = #{start},
+            end = #{end}
+        WHERE pid = #{pid}
+    </update>
+    
+    
+    <delete id="deletePlan" parameterType="int">
+        DELETE FROM plan WHERE pid = #{pid}
+    </delete>
+    
+       <resultMap id="planDetailResultMap" type="com.ssafy.trip.model.dto.PlanDetail">
+      	  <result property="pid" column="pid"/>        
+           <result property="ano" column="ano"/>           
+           <result property="start" column="d_start"/>
+           <result property="end" column="d_end"/>
+   </resultMap>
+   <resultMap id="planResultMap" type="com.ssafy.trip.model.dto.Plan">
+           <id property="pid" column="pid"/>
+           <result property="mno" column="id"/>
+           <result property="name" column="name"/>
+           <result property="start" column="p_start"/>
+           <result property="end" column="p_end"/>
+           <collection property="details" ofType="com.ssafy.trip.model.dto.PlanDetail"  resultMap="planDetailResultMap"/>          
+   </resultMap>
+    
+     <select id="selectPlansByUser"  resultMap="planResultMap" parameterType="int">
+           SELECT
+               p.pid AS pid,
+               p.id AS id,
+               p.name AS name,
+               p.start AS p_start,
+               p.end AS p_end,
+               d.ano AS ano,
+               d.start AS d_start,
+               d.end AS d_end
+           FROM plan p
+           JOIN plandetail d ON p.pid= d.pid
+           WHERE p.id = #{mid}       
+	</select>
+	
+
+
+</mapper>
+
+<!-- 	
+
+
+<insert id="makePlan">
+    INSERT INTO plan(id, name, start, end)
+    VALUES (#{uid}, #{name}, #{start}, #{end})
+</insert>
+	
+	public void makePlan(Connection conn, int uid, Plan plan) throws SQLException {
+
+		String sql = "insert into plan(id, name, start, end) values(?,?,?,?)";
+		try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+			pstmt.setInt(1, uid);
+			pstmt.setString(2, plan.getName());
+			pstmt.setString(3, plan.getStart());
+			pstmt.setString(4, plan.getEnd());
+			pstmt.executeUpdate();
+			System.out.println("여행 계획 추가 완료");
+		}
+
+	}
+	
+	
+<select id="findTripPlanD">
+    SELECT 
+        pid,id AS mno,name,start,end FROM plan WHERE id = #{uid}
+</select>
+	public List<Plan> findTripPlanD(Connection conn, int uid) throws SQLException {
+
+		String sql = "select * from plan where id=?";
+		List<Plan> list = new ArrayList<>();
+		try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+			pstmt.setInt(1, uid);
+			ResultSet rs = pstmt.executeQuery();
+			while (rs.next()) {
+				Plan plan = new Plan();
+				plan.setPid(rs.getInt("pid"));
+				plan.setMno(rs.getInt("id"));
+				plan.setName(rs.getString("name"));
+				plan.setStart(rs.getString("start"));
+				plan.setEnd(rs.getString("end"));
+				list.add(plan);
+			}
+			return list;
+		}
+	}
+	
+	<select id="findTripPlanByPid" >
+    SELECT 
+        pid,
+        id AS mno,
+        name,
+        start,
+        end
+    FROM plan
+    WHERE pid = #{pid}
+</select>
+	public Plan findTripPlanByPid(Connection conn, int pid) throws SQLException {
+
+		String sql = "select * from plan where pid=?";
+		try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+			pstmt.setInt(1, pid);
+			ResultSet rs = pstmt.executeQuery();
+			if (rs.next()) {
+				Plan plan = new Plan();
+				plan.setPid(rs.getInt("pid"));
+				plan.setMno(rs.getInt("id"));
+				plan.setName(rs.getString("name"));
+				plan.setStart(rs.getString("start"));
+				plan.setEnd(rs.getString("end"));
+				return plan;
+			}
+			return null;
+		}
+	}
+	
+	<select id="findLastOrder">
+    SELECT MAX(seq)
+    FROM planDetail
+    WHERE pid = #{pid}
+</select>
+	
+	public int findLastOrder(Connection con, int pid) throws SQLException{
+		String sql = "select max(seq) from planDetail where pid=?";
+		try(PreparedStatement pstmt = con.prepareStatement(sql)){
+			pstmt.setInt(1, pid);
+			ResultSet rs = pstmt.executeQuery();
+			if(rs.next()) {
+				return rs.getInt(1);
+			}
+		}
+		return 0;
+	}
+	
+	public void addToPlan(Connection con, int pid, int ano) throws SQLException {
+		String sql = "insert into planDetail(pid, ano, seq) values(?,?,?)";
+		try (PreparedStatement pstmt = con.prepareStatement(sql)) {
+			pstmt.setInt(1, pid);
+			pstmt.setInt(2, ano);
+			pstmt.setInt(3, findLastOrder(con, pid)+1); // 마지막 번호보다 1 큰 번호를 순서로 저장
+			pstmt.executeUpdate();
+		}
+	}
+	
+
+	} -->

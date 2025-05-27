@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="com.ssafy.trip.model.dao.HotplaceDao">
+  
+    <resultMap id="attractionList" type="Attraction">
+    	<result column="no" property="ano"/>
+    	<result column="title" property="name"/>
+    	<result column="latitude" property="lat"/>
+    	<result column="longitude" property="lon"/>
+    	<result column="overview" property="overview"/>
+    	<result column="first_image1" property="img"/>
+    	<result  column="addr1" property="address"/>
+    	<result  column="likes" property="likes"/>
+    </resultMap>   
+  
+  
+  <select id="searchHotplace">
+          SELECT * FROM HOTPLACE
+          ORDER BY likes DESC; 	
+  </select>
+  
+  <select id="getContentTypeId">
+          SELECT CONTENT_TYPE_ID
+          FROM CONTENTTYPES
+          WHERE CONTENT_TYPE_NAME = #{content}
+  </select>
+  
+  <select id="getHotplaces" resultMap="attractionList">
+		select * 
+		from attractions
+		order by likes
+		limit #{offset},8;   	
+  </select>
+  
+  <insert id="regist">
+      INSERT INTO HOTPLACE(TITLE, MID, DATE, CONTENT_TYPE_ID, IMAGE, X, Y)
+      VALUES(#{title}, #{mid}, #{date}, #{content_type_id}, #{image}, #{x}, #{y})
+  </insert>
+  
+<select id="getHotplaceBycontetnt" resultMap="attractionList">
+	SELECT a.* 
+	FROM attractions a
+	JOIN CONTENTTYPES c ON a.CONTENT_TYPE_ID = c.CONTENT_TYPE_ID
+	JOIN SIDOS s ON a.area_code = s.sido_code 
+	WHERE c.CONTENT_TYPE_NAME = #{content} 
+	  AND s.sido_name = #{sido}
+	ORDER BY a.likes DESC 
+	LIMIT #{offset}, 8
+</select>
+
+  <select id="getHotplaceBygugun" resultMap="attractionList">
+	SELECT a.*
+	FROM attractions a
+	WHERE a.area_code = (
+       	SELECT sido_code
+        FROM guguns
+        WHERE no = #{no}
+    )
+  	AND a.si_gun_gu_code = (
+        SELECT gugun_code
+        FROM guguns
+        WHERE no = #{no}
+    	)
+	ORDER BY a.likes DESC
+    limit #{offset}, 8;
+  </select>
+  
+  <select id="getHotplaceBysido" resultMap="attractionList">
+  	SELECT a.*
+	FROM attractions a
+	JOIN SIDOS s ON a.area_code = s.sido_code
+	WHERE s.sido_name = #{sido}
+	ORDER BY a.likes DESC 	
+    limit #{offset}, 8;
+  </select>
+  
+    <select id="getLikeCount" >
+	select likes from attractions where no = ${ano};
+  </select>
+
+  
+  <select id="likeExist" resultType="boolean">
+    SELECT EXISTS(
+        SELECT 1
+        FROM likes
+        WHERE uid = #{uid} AND ano = #{ano}
+    	)
+	</select>
+    
+    <update id="decrementLikeCount">
+    	UPDATE ATTRACTIONS
+		SET likes = likes - 1
+		WHERE no = #{ano};
+    </update> 
+    
+    <update id="incrementLikeCount">
+    	UPDATE ATTRACTIONS
+		SET likes = likes + 1
+		WHERE no = #{ano};
+    </update>     
+    
+    <delete id="deleteLike">
+    	DELETE FROM likes
+  		WHERE uid = #{uid} AND ano = #{ano}
+    </delete>
+    
+    <select id="getLikedAnoListMno" parameterType="int" resultType="int">
+    SELECT ano
+    FROM likes
+    WHERE uid = #{mno}
+</select>
+    
+    <insert id="insertLike">
+    	insert into likes(uid,ano) values(#{uid},#{ano});
+    </insert>
+    
+    <select id="searchLike" parameterType="int" resultMap="attractionResultMap">
+    SELECT a.*
+    FROM likes l
+    JOIN attractions a ON l.ano= a.no
+    WHERE l.uid = #{mno}
+</select>
+
+    
+    <resultMap id="attractionResultMap" type="com.ssafy.trip.model.dto.Attraction">
+    <id property="ano" column="no" />
+    <result property="name" column="title" />
+    <result property="lat" column="latitude" />
+    <result property="lon" column="longitude" />
+    <result property="address" column="addr1" />
+    <result property="overview" column="overview" />
+    <result property="img" column="first_image1" />
+    <result property="likes" column="likes" />
+</resultMap>
+    
+  </mapper>
